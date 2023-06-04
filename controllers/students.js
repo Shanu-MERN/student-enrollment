@@ -17,54 +17,43 @@ const getAllStudents = async (req, res) => {
 const getStudent = async (req, res) => {
   try {
     const data = await Student.findById(req.params.id);
-    res.json(data);
+    return res.json(data);
   } catch (error) {
-    res.status(500).send(`No student with id ${req.params.id} found`);
+    return res.status(500).send(`No student with id ${req.params.id} found`);
   }
 };
 
-const addStudent = (req, res) => {
-  const requiredFields = ["name", "enrolledDepartment", "enrollmentDate"];
-  let errorMessage = "Missing required field(s): ";
-  for (const field of requiredFields) {
-    if (!req.body[field]) {
-      errorMessage += `${field} `;
-    }
-  }
-  if (errorMessage !== "Missing required field(s): ") {
-    return res.status(400).send(errorMessage);
-  }
-
+const addStudent = async (req, res) => {
   const newStudent = new Student(req.body);
   try {
-    newStudent.save();
-    res.json(newStudent);
+    await newStudent.save();
   } catch (error) {
-    res.status(500).json(`Error adding student to database: ${error.message}`);
+    return res
+      .status(500)
+      .json(`Error adding student to database: ${error.message}`);
   }
+  return res.json(newStudent);
 };
 
 const updateStudent = async (req, res) => {
-  const id = req.params.id;
-  const { name, enrolledDepartment, enrollmentDate } = req.body;
-  var student = await Student.findById(req.params.id);
-  if (!student) {
-    return res.status(404).send(`No student with id ${id} found`);
+  try {
+    var student = await Student.findById(req.params.id);
+  } catch (error) {
+    return res.status(500).send(`No student with id ${req.params.id} found`);
   }
-  student.name = name;
-  student.enrolledDepartment = enrolledDepartment;
-  student.enrollmentDate = enrollmentDate;
+  for (const key in req.body) {
+    if (req.body[key]) student[key] = req.body[key];
+  }
   await student.save();
   return res.json(student);
 };
 
 const deleteStudent = async (req, res) => {
-  const id = req.params.id;
   try {
-    const deletedStudent = await Student.findByIdAndDelete(id);
+    const deletedStudent = await Student.findByIdAndDelete(req.params.id);
     return res.json(deletedStudent);
   } catch (error) {
-    return res.status(500).send(`No student with id ${id} found`);
+    return res.status(500).send(`No student with id ${req.params.id} found`);
   }
 };
 
